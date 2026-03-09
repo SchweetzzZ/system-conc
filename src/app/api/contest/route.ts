@@ -5,9 +5,7 @@ import { contestSchema } from "./schemas";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        console.log("depois do body");
         const validatedData = contestSchema.parse(body);
-        console.log("depois do validatedData");
         const create = await createContest(validatedData);
         return NextResponse.json(create, { status: 201 });
     } catch (error: any) {

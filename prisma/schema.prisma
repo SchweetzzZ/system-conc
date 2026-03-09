@@ -34,6 +34,7 @@ model User {
     phone          String?
     createdAt      DateTime  @default(now()) @map("created_at")
     updatedAt      DateTime  @updatedAt @map("updated_at")
+    password       String?
     role           String    @default("user")
     banned         Boolean   @default(false)
     banReason      String?   @map("ban_reason")
@@ -104,17 +105,19 @@ model Contest {
     subscriptions     Subscription[]
 }
 
+//cargo do concurso
 model ContestPosition {
     id            String   @id @default(uuid())
     contestId     String
     name          String
     vacancies     Int
-    salary        Int
+    salary        Decimal @db.Decimal(10,2)
     createdAt     DateTime @default(now())
 
     contest       Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
     subscriptions Subscription[]
 }
+
 
 model ContestStage {
     id            String   @id @default(uuid())

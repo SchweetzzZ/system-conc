@@ -17,8 +17,8 @@ export const createContest = async (input: CreateContestInput) => {
             registrationStart: input.registrationStart,
             registrationEnd: input.registrationEnd,
             examDate: input.examDate,
-        },
-    });
+        }
+    })
     return create;
 }
 
@@ -32,7 +32,7 @@ export const getContestById = async (id: string) => {
         where: {
             id,
         },
-    });
+    })
     return getcont;
 }
 
