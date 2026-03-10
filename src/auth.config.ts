@@ -15,7 +15,7 @@ export const authConfig = {
             } else if (isLoggedIn) {
                 // Redireciona usuários logados se tentarem acessar login/register
                 if (nextUrl.pathname === "/login" || nextUrl.pathname === "/register") {
-                    return Response.redirect(new URL("/dashboard", nextUrl));
+                    return Response.redirect(new URL("/home", nextUrl));
                 }
             }
             return true;
