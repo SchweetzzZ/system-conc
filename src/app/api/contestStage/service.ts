@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma"
+import { baseSchema } from "./contestStage.Schema"
 
 interface CreateContestStageInput {
     constestId: string,
