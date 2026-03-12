@@ -6,7 +6,7 @@ export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }) {
     try {
-        const body = request.json()
+        const body = await request.json()
         const validateUpdate = updateSchema.parse(body)
         const { id } = await params
         const create = await updateConstestPosition(id, validateUpdate)
