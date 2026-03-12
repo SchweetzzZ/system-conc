@@ -1,16 +1,16 @@
-import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { NoticeService } from "../service";
 import { updateNoticeSchema } from "../notice.schema";
+import { getNoticeById, updateNotice, deleteNotice } from "../service";
+import { adminGuard } from "@/lib/api-guard";
 
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params }: { params: Promise<{ id: string }> }) {
+
   const { id } = await params;
 
   try {
-    const notice = await NoticeService.getById(id);
+    const notice = await getNoticeById(id);
     if (!notice) {
       return NextResponse.json({ error: "Notícia não encontrada" }, { status: 404 });
     }
@@ -26,14 +26,13 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-  const { id } = await params;
+  { params }: { params: Promise<{ id: string }> }) {
+  const guard = await adminGuard()
 
-  if (session?.user?.role !== "ADMIN") {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  if (!guard.authorized) {
+    return guard.response
   }
+  const { id } = await params;
 
   try {
     const body = await req.json();
@@ -46,7 +45,7 @@ export async function PATCH(
       );
     }
 
-    const notice = await NoticeService.update(id, parsed.data);
+    const notice = await updateNotice(id, parsed.data);
     return NextResponse.json(notice);
   } catch (error) {
     console.error("Erro ao atualizar notícia:", error);
@@ -59,17 +58,17 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
+  { params }: { params: Promise<{ id: string }> }) {
+
+  const guard = await adminGuard()
+
+  if (!guard.authorized) {
+    return guard.response
+  }
   const { id } = await params;
 
-  if (session?.user?.role !== "ADMIN") {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-  }
-
   try {
-    await NoticeService.delete(id);
+    await deleteNotice(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Erro ao deletar notícia:", error);

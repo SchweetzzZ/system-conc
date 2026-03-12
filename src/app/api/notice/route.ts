@@ -1,13 +1,13 @@
-import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { NoticeService } from "./service";
+import { createNotice, listNotices } from "./service";
 import { createNoticeSchema } from "./notice.schema";
+import { adminGuard } from "@/lib/api-guard";
 
 export async function POST(req: Request) {
-    const session = await auth();
+    const guard = await adminGuard()
 
-    if (session?.user?.role !== "ADMIN") {
-        return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    if (!guard.authorized) {
+        return guard.response
     }
 
     try {
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
             );
         }
 
-        const notice = await NoticeService.create(parsed.data);
+        const notice = await createNotice(parsed.data);
         return NextResponse.json(notice, { status: 201 });
     } catch (error) {
         console.error("Erro ao criar notícia:", error);
@@ -44,7 +44,7 @@ export async function GET(req: Request) {
     }
 
     try {
-        const notices = await NoticeService.listByContest(contestId);
+        const notices = await listNotices(contestId);
         return NextResponse.json(notices);
     } catch (error) {
         console.error("Erro ao buscar notícias:", error);

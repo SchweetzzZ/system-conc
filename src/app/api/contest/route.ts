@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { createContest, getAllContests } from "./service";
 import { contestSchema } from "./schemas";
+import { adminGuard } from "@/lib/api-guard";
 
 export async function POST(request: Request) {
+    const guard = await adminGuard()
+
+    if (!guard.authorized) {
+        return guard.response
+    }
     try {
         const body = await request.json();
         const validatedData = contestSchema.parse(body);

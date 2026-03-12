@@ -1,58 +1,56 @@
-import prisma from "@/lib/prisma";
-import { CreateNoticeInput, UpdateNoticeInput } from "./notice.schema";
-import { deleteFromS3 } from "@/lib/s3";
+import prisma from "@/lib/prisma"
+import { CreateNoticeInput, UpdateNoticeInput } from "./notice.schema"
+import { deleteFromS3 } from "@/lib/s3"
 
-export class NoticeService {
-  static async create(data: CreateNoticeInput) {
-    return await prisma.notice.create({
-      data,
-    });
-  }
+export const createNotice = async (input: CreateNoticeInput) => {
+    const createdNotice = await prisma.notice.create({
+        data: input
+    })
+    return createdNotice
+}
 
-  static async update(id: string, data: UpdateNoticeInput) {
-    // Se estiver atualizando o arquivo, podemos querer deletar o antigo do S3
-    if (data.fileKey) {
-      const notice = await prisma.notice.findUnique({
+export const updateNotice = async (id: string, input: UpdateNoticeInput) => {
+    if (input.fileKey) {
+        const existingNotice = await prisma.notice.findUnique({
+            where: { id },
+            select: { fileKey: true }
+        })
+        if (existingNotice && existingNotice.fileKey !== input.fileKey) {
+            await deleteFromS3(existingNotice.fileKey)
+        }
+    }
+    const updatedNotice = await prisma.notice.update({
         where: { id },
-        select: { fileKey: true },
-      });
+        data: input
+    })
+    return updatedNotice
+}
 
-      if (notice && notice.fileKey !== data.fileKey) {
-        await deleteFromS3(notice.fileKey);
-      }
-    }
-
-    return await prisma.notice.update({
-      where: { id },
-      data,
-    });
-  }
-
-  static async delete(id: string) {
+export const deleteNotice = async (id: string) => {
     const notice = await prisma.notice.findUnique({
-      where: { id },
-      select: { fileKey: true },
-    });
-
+        where: { id },
+        select: { fileKey: true }
+    })
     if (notice) {
-      await deleteFromS3(notice.fileKey);
+        await deleteFromS3(notice.fileKey)
     }
+    const deletedNotice = await prisma.notice.delete({
+        where: { id }
+    })
+    return deletedNotice
+}
 
-    return await prisma.notice.delete({
-      where: { id },
-    });
-  }
+export const listNotices = async (contestId: string) => {
+    const listedNotices = await prisma.notice.findMany({
+        where: { contestId },
+        orderBy: { createdAt: "desc" }
+    })
+    return listedNotices
+}
 
-  static async listByContest(contestId: string) {
-    return await prisma.notice.findMany({
-      where: { contestId },
-      orderBy: { createdAt: "desc" },
-    });
-  }
-
-  static async getById(id: string) {
-    return await prisma.notice.findUnique({
-      where: { id },
-    });
-  }
+export const getNoticeById = async (id: string) => {
+    const getNotice = await prisma.notice.findUnique({
+        where: { id }
+    })
+    return getNotice
 }

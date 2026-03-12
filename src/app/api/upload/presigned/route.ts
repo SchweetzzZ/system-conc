@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       "image/gif",
       "application/pdf",
     ];
-    
+
     if (!allowedTypes.includes(contentType)) {
       return NextResponse.json(
         { error: "Tipo de arquivo não permitido. Use JPEG, PNG, WEBP, GIF ou PDF." },
