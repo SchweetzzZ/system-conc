@@ -26,6 +26,7 @@ export async function updateSubscriptionStageResult(id: string, data: UpdateSubs
 }
 
 export async function deleteSubscriptionStageResult(id: string) {
+
     const deleteResult = await prisma.subscriptionStageResult.delete({ where: { id } })
     return deleteResult
 }
