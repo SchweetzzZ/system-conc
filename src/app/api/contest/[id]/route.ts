@@ -3,19 +3,6 @@ import { NextResponse } from "next/server"
 import { updateContestSchema } from "../schemas"
 import { adminGuard } from "@/lib/api-guard"
 
-export async function GET(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }) {
-    try {
-        const { id } = await params
-        const contest = await getContestById(id)
-        if (!contest) return NextResponse.json({ message: "Contest not found" }, { status: 404 })
-        return NextResponse.json(contest)
-    } catch (error) {
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
-    }
-}
-
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }) {
@@ -54,5 +41,15 @@ export async function DELETE(
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
     }
 }
-
-
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const { id } = await params
+        const contest = await getContestById(id)
+        if (!contest) return NextResponse.json({ message: "Contest not found" }, { status: 404 })
+        return NextResponse.json(contest)
+    } catch (error) {
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
+    }
+}

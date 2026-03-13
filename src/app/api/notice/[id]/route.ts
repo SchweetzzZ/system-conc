@@ -3,27 +3,6 @@ import { updateNoticeSchema } from "../notice.schema";
 import { getNoticeById, updateNotice, deleteNotice } from "../service";
 import { adminGuard } from "@/lib/api-guard";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }) {
-
-  const { id } = await params;
-
-  try {
-    const notice = await getNoticeById(id);
-    if (!notice) {
-      return NextResponse.json({ error: "Notícia não encontrada" }, { status: 404 });
-    }
-    return NextResponse.json(notice);
-  } catch (error) {
-    console.error("Erro ao buscar notícia:", error);
-    return NextResponse.json(
-      { error: "Erro interno ao buscar notícia" },
-      { status: 500 }
-    );
-  }
-}
-
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }) {
@@ -74,6 +53,27 @@ export async function DELETE(
     console.error("Erro ao deletar notícia:", error);
     return NextResponse.json(
       { error: "Erro interno ao deletar notícia" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }) {
+
+  const { id } = await params;
+
+  try {
+    const notice = await getNoticeById(id);
+    if (!notice) {
+      return NextResponse.json({ error: "Notícia não encontrada" }, { status: 404 });
+    }
+    return NextResponse.json(notice);
+  } catch (error) {
+    console.error("Erro ao buscar notícia:", error);
+    return NextResponse.json(
+      { error: "Erro interno ao buscar notícia" },
       { status: 500 }
     );
   }

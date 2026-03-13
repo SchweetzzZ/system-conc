@@ -12,6 +12,12 @@ datasource db {
     provider = "postgresql"
 }
 
+enum SubscriptionStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
 enum DocumentStatus {
     PENDING
     APPROVED

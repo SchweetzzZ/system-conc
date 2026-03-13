@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { updateConstestPosition, deleteContestPosition, getContestPositionById } from "../service";
 import { updateSchema } from "../schema";
+import { adminGuard } from "@/lib/api-guard";
 
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }) {
+    const guard = await adminGuard()
+    if (!guard.authorized) {
+        return guard.response
+    }
     try {
         const body = await request.json()
         const validateUpdate = updateSchema.parse(body)
@@ -23,6 +28,10 @@ export async function PATCH(
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }) {
+    const guard = await adminGuard()
+    if (!guard.authorized) {
+        return guard.response
+    }
     try {
         const { id } = await params
         const delet = await deleteContestPosition(id)
