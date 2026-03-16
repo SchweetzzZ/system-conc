@@ -8,7 +8,7 @@ export async function adminGuard() {
     if (session) console.log("[ADMIN GUARD] User:", session.user.email, "Role:", session.user.role);
 
     const isTestEmail = session?.user.email?.toLowerCase() === "casac2978@gmail.com".toLowerCase();
-    const isAdmin = session?.user.role === "ADMIN" || isTestEmail;
+    const isAdmin = session?.user.role?.toUpperCase() === "ADMIN" || isTestEmail;
 
     if (!isAdmin) {
         console.log("[ADMIN GUARD] Acesso negado para:", session?.user.email);

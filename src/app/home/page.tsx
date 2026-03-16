@@ -77,10 +77,24 @@ export default function Dashboard() {
         finally { setIsSavingProfile(false) }
     }
 
-    const isProfileComplete = () => {
-        const required = ['cpf', 'phone', 'street', 'city', 'state', 'zipCode', 'schooling', 'birthDate']
-        return profile && required.every(field => !!profile[field])
+    const getMissingFields = () => {
+        if (!profile) return ['Perfil não carregado']
+        const required = [
+            { key: 'cpf', label: 'CPF' },
+            { key: 'phone', label: 'Telefone' },
+            { key: 'street', label: 'Rua' },
+            { key: 'city', label: 'Cidade' },
+            { key: 'state', label: 'Estado (UF)' },
+            { key: 'zipCode', label: 'CEP' },
+            { key: 'schooling', label: 'Escolaridade' },
+            { key: 'birthDate', label: 'Data de Nascimento' }
+        ]
+        return required
+            .filter(field => !profile[field.key] || String(profile[field.key]).trim() === '')
+            .map(field => field.label)
     }
+
+    const isProfileComplete = () => getMissingFields().length === 0
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
         const file = e.target.files?.[0]
@@ -88,7 +102,7 @@ export default function Dashboard() {
         try {
             const preRes = await fetch('/api/upload/presigned', { method: 'POST', body: JSON.stringify({ fileName: file.name, contentType: file.type, fileSize: file.size }) })
             const { data } = await preRes.json()
-            await fetch(data.uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
+            await fetch(data.uploadUrl, { method: 'PUT', body: file })
             setUploadedDocs(prev => [...prev.filter(d => d.type !== type), { type, fileUrl: data.fileUrl, fileKey: data.fileKey }])
             alert(`✅ ${type} carregado!`)
         } catch (err) { alert("Erro no upload") }
@@ -204,12 +218,24 @@ export default function Dashboard() {
                                         </div>
                                     </div>
 
-                                    <button 
-                                        onClick={() => { setSelectedContest(c); setSubStep(1); setActiveTab('contests_flow'); }}
-                                        className="w-full mt-8 py-4 bg-slate-900 text-white rounded-xl text-xs font-bold tracking-widest uppercase hover:bg-black"
-                                    >
-                                        Iniciar Inscrição
-                                    </button>
+                                    <div className="mt-8 space-y-3">
+                                        {!isProfileComplete() && (
+                                            <div className="text-[10px] font-bold text-rose-500 bg-rose-50 p-4 rounded-xl space-y-2">
+                                                <p>⚠️ Inscrição bloqueada. Complete seu perfil:</p>
+                                                <ul className="list-disc list-inside grid grid-cols-2 gap-1 opacity-70">
+                                                    {getMissingFields().map(f => <li key={f}>{f}</li>)}
+                                                </ul>
+                                                <button onClick={() => setActiveTab('profile')} className="mt-2 text-rose-600 underline">Ir para Meu Perfil &rarr;</button>
+                                            </div>
+                                        )}
+                                        <button 
+                                            disabled={!isProfileComplete()}
+                                            onClick={() => { setSelectedContest(c); setSubStep(1); setActiveTab('contests_flow'); }}
+                                            className="w-full py-4 bg-slate-900 text-white rounded-xl text-xs font-bold tracking-widest uppercase hover:bg-black disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                                        >
+                                            Iniciar Inscrição
+                                        </button>
+                                    </div>
                                 </div>
                              ))}
                         </div>
@@ -305,15 +331,31 @@ export default function Dashboard() {
                             <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-slate-400">CPF</label><input name="cpf" defaultValue={profile?.cpf} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" /></div>
                             <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-slate-400">Nascimento</label><input type="date" name="birthDate" defaultValue={profile?.birthDate?.split('T')[0]} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" /></div>
                             <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-slate-400">Telefone</label><input name="phone" defaultValue={profile?.phone} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" /></div>
-                            <div className="md:col-span-2 space-y-1">
+                            <div className="space-y-1">
                                 <label className="text-[10px] font-bold uppercase text-slate-400">Escolaridade</label>
                                 <select name="schooling" defaultValue={profile?.schooling} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium">
-                                    <option value="fundamental">Ensino Fundamental</option>
-                                    <option value="medio">Ensino Médio</option>
-                                    <option value="superior">Ensino Superior</option>
+                                    <option value="">Selecione...</option>
+                                    <option value="MEDIO">Ensino Médio</option>
+                                    <option value="SUPERIOR">Ensino Superior</option>
                                 </select>
                             </div>
-                            <button disabled={isSavingProfile} className="md:col-span-2 py-4 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase mt-4">Salvar Alterações</button>
+                            <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-slate-400">CEP</label><input name="zipCode" defaultValue={profile?.zipCode} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" /></div>
+                            <div className="md:col-span-2 space-y-1"><label className="text-[10px] font-bold uppercase text-slate-400">Endereço / Rua</label><input name="street" defaultValue={profile?.street} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" /></div>
+                            <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-slate-400">Cidade</label><input name="city" defaultValue={profile?.city} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" /></div>
+                            <div className="space-y-1"><label className="text-[10px] font-bold uppercase text-slate-400">Estado (UF)</label><input name="state" defaultValue={profile?.state} maxLength={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" placeholder="Ex: RJ" /></div>
+                            <button disabled={isSavingProfile} className="md:col-span-2 py-4 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase mt-4 disabled:opacity-50">
+                                {isSavingProfile ? "Salvando..." : "Salvar Alterações"}
+                            </button>
+                            {!isProfileComplete() && (
+                                <div className="md:col-span-2 p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                                    <p className="text-[10px] font-bold text-amber-700 uppercase mb-2">Campos Pendentes:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {getMissingFields().map(f => (
+                                            <span key={f} className="px-2 py-1 bg-white border border-amber-200 rounded text-[9px] font-bold text-amber-600">{f}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </form>
                     )}
 

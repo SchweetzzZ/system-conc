@@ -2,7 +2,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || "auto",
+  region: "us-east-1", // us-east-1 é o padrão mais seguro para compatibilidade v4 no R2
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
@@ -17,7 +17,7 @@ export async function getPresignedUploadUrl(key: string, contentType: string) {
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,
-    ContentType: contentType,
+    // Removendo o ContentType da assinatura para evitar conflitos de headers no navegador
   });
 
   // URL válida por 5 minutos

@@ -93,6 +93,7 @@ model ContestPosition {
   id            String         @id @default(uuid())
   contestId     String
   name          String
+  schooling     String
   vacancies     Int
   salary        Decimal        @db.Decimal(10, 2)
   createdAt     DateTime       @default(now())
@@ -198,4 +199,9 @@ enum StageStatus {
   APPROVED
   ABSENT
   REJECTED
+}
+
+enum Schooling {
+  MEDIO
+  SUPERIOR
 }

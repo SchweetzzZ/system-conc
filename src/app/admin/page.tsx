@@ -15,10 +15,11 @@ export default function AdminDashboard() {
 
     // Selection for sub-tabs
     const [selectedContestId, setSelectedContestId] = useState("")
+    const [subTabStatus, setSubTabStatus] = useState("PENDING")
 
     // Form states
     const [contestForm, setContestForm] = useState({ title: "", description: "", registrationStart: "", registrationEnd: "", examDate: "" })
-    const [positionForm, setPositionForm] = useState({ contestId: "", name: "", vacancies: 0, salary: 0 })
+    const [positionForm, setPositionForm] = useState({ contestId: "", name: "", vacancies: 0, salary: 0, schooling: "" })
     const [stageForm, setStageForm] = useState({ contestId: "", name: "", order: 1, description: "" })
     const [newsForm, setNewsForm] = useState({ contestId: "", title: "", content: "" })
     const [noticeForm, setNoticeForm] = useState({ contestId: "", title: "", file: null as File | null })
@@ -36,8 +37,16 @@ export default function AdminDashboard() {
     }
 
     useEffect(() => {
-        if (status === "unauthenticated") router.push("/login")
-        if (session) fetchData()
+        if (status === "unauthenticated") {
+            router.push("/login")
+        } else if (session) {
+            const isAdmin = (session.user as any).role === "ADMIN" || session.user.email?.toLowerCase() === "casac2978@gmail.com".toLowerCase();
+            if (!isAdmin) {
+                router.push("/home")
+            } else {
+                fetchData()
+            }
+        }
     }, [status, session, router])
 
     const handleAction = async (url: string, method: string, body: any, successMsg: string) => {
@@ -121,7 +130,11 @@ export default function AdminDashboard() {
         setSelectedSub(null)
     }
 
-    if (status === "loading") return <div className="p-20 text-center font-bold text-slate-400">Carregando...</div>
+    const isAdmin = session?.user && ((session.user as any).role === "ADMIN" || session.user.email?.toLowerCase() === "casac2978@gmail.com".toLowerCase());
+
+    if (status === "loading" || (session && !isAdmin)) {
+        return <div className="p-20 text-center font-bold text-slate-400">Verificando permissões...</div>
+    }
 
     const tabs = [
         { id: "contests", label: "Concursos", icon: "🏆" },
@@ -214,6 +227,14 @@ export default function AdminDashboard() {
                                     <label className="text-[10px] font-bold uppercase text-slate-400">Nome do Cargo</label>
                                     <input value={positionForm.name} onChange={e => setPositionForm({...positionForm, name: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" required />
                                 </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase text-slate-400">Escolaridade</label>
+                                    <select value={positionForm.schooling} onChange={e => setPositionForm({...positionForm, schooling: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" required>
+                                        <option value="">Selecione...</option>
+                                        <option value="MEDIO">Ensino Médio</option>
+                                        <option value="SUPERIOR">Ensino Superior</option>
+                                    </select>
+                                </div>
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-bold uppercase text-slate-400">Vagas</label>
@@ -256,16 +277,55 @@ export default function AdminDashboard() {
                         )}
 
                         {activeTab === "homologate" && (
-                            <div className="space-y-4">
-                                {adminSubscriptions.map(sub => (
-                                    <div key={sub.id} className="p-4 border border-slate-100 rounded-xl flex justify-between items-center hover:bg-slate-50 transition-colors">
-                                        <div>
-                                            <p className="text-xs font-bold">{sub.user.name}</p>
-                                            <p className="text-[10px] text-slate-400 font-medium">{sub.contest.title} - {sub.position.name}</p>
+                            <div className="space-y-6">
+                                {/* Sub-navigation for Status */}
+                                <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+                                    {[
+                                        { id: "PENDING", label: "Pendentes", color: "bg-amber-500" },
+                                        { id: "APPROVED", label: "Aprovados", color: "bg-emerald-500" },
+                                        { id: "REJECTED", label: "Reprovados", color: "bg-rose-500" }
+                                    ].map(s => (
+                                        <button
+                                            key={s.id}
+                                            onClick={() => setSubTabStatus(s.id)}
+                                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-2 ${
+                                                subTabStatus === s.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                            }`}
+                                        >
+                                            <span className={`w-1.5 h-1.5 rounded-full ${s.color}`}></span>
+                                            {s.label}
+                                            <span className="ml-1 opacity-50">
+                                                ({adminSubscriptions.filter(sub => sub.status === s.id).length})
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-4">
+                                    {adminSubscriptions
+                                        .filter(sub => sub.status === subTabStatus)
+                                        .map(sub => (
+                                            <div key={sub.id} className="p-4 border border-slate-100 rounded-xl flex justify-between items-center hover:bg-slate-50 transition-colors group">
+                                                <div>
+                                                    <p className="text-xs font-bold text-slate-900">{sub.user.name}</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">{sub.contest.title} • {sub.position.name}</p>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setSelectedSub(sub)} 
+                                                    className="px-4 py-2 bg-slate-900 text-white rounded-lg text-[10px] font-bold uppercase opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    {subTabStatus === "PENDING" ? "Analisar" : "Ver Detalhes"}
+                                                </button>
+                                            </div>
+                                        ))}
+                                    
+                                    {adminSubscriptions.filter(sub => sub.status === subTabStatus).length === 0 && (
+                                        <div className="py-20 text-center space-y-2">
+                                            <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">Nada por aqui</p>
+                                            <p className="text-[10px] text-slate-400">Nenhuma inscrição com status {subTabStatus.toLowerCase()} foi encontrada.</p>
                                         </div>
-                                        <button onClick={() => setSelectedSub(sub)} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-[10px] font-bold uppercase">Analisar</button>
-                                    </div>
-                                ))}
+                                    )}
+                                </div>
                             </div>
                         )}
 

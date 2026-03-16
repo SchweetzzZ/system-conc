@@ -36,7 +36,7 @@ function LoginForm() {
                     ✅ Conta criada! Agora você pode fazer o login.
                 </div>
             )}
-            
+
             <div className="space-y-2">
                 <Link href="/" className="inline-flex items-center gap-2 mb-8 group">
                     <div className="w-8 h-8 bg-slate-900 rounded flex items-center justify-center transition-transform group-hover:-rotate-3">
@@ -51,12 +51,12 @@ function LoginForm() {
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">E-mail</label>
-                    <input 
-                        name="email" 
-                        type="email" 
-                        placeholder="exemplo@email.com" 
-                        required 
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium" 
+                    <input
+                        name="email"
+                        type="email"
+                        placeholder="exemplo@email.com"
+                        required
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium"
                     />
                 </div>
 
@@ -65,17 +65,17 @@ function LoginForm() {
                         <label className="text-[10px] font-bold uppercase text-slate-400">Senha</label>
                         <button type="button" className="text-[10px] font-bold text-slate-400 hover:text-slate-900">Esqueceu?</button>
                     </div>
-                    <input 
-                        name="password" 
-                        type="password" 
-                        placeholder="••••••••" 
-                        required 
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium" 
+                    <input
+                        name="password"
+                        type="password"
+                        placeholder="••••••••"
+                        required
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium"
                     />
                 </div>
 
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     disabled={isLoading}
                     className={`w-full py-4 bg-slate-900 text-white rounded-xl font-bold text-sm tracking-widest uppercase hover:bg-black transition-all flex items-center justify-center gap-3 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
@@ -105,10 +105,10 @@ export default function LoginPage() {
             {/* Right Side: Visual */}
             <div className="hidden lg:block relative p-12 bg-slate-50 overflow-hidden">
                 <div className="h-full w-full bg-blue-600 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]"></div>
+                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] bg-size-[20px_20px]"></div>
                     <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/20 blur-3xl rounded-full"></div>
                     <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500 blur-3xl rounded-full opacity-50"></div>
-                    
+
                     <div className="absolute inset-0 flex flex-col justify-center p-20 text-white">
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/10 backdrop-blur-md text-xs font-bold uppercase tracking-widest mb-12 w-fit">
                             Segurança & Confiabilidade
@@ -121,18 +121,6 @@ export default function LoginPage() {
                         <p className="text-xl text-blue-100 font-medium max-w-md leading-relaxed">
                             A plataforma oficial para candidatos. Acesse editais, verifique convocações e gerencie seus documentos de forma 100% digital.
                         </p>
-                    </div>
-
-                    <div className="absolute bottom-12 right-12 bg-white/10 backdrop-blur-xl p-6 rounded-3xl border border-white/20 glass animate-bounce-slow">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-green-400 rounded-2xl flex items-center justify-center">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                            </div>
-                            <div>
-                                <div className="text-sm font-bold text-white opacity-60">Status Atual</div>
-                                <div className="text-lg font-black text-white">Inscrição Confirmada</div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

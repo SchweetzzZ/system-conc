@@ -16,6 +16,42 @@ export const createSubscription = async (input: CreateSubscriptionInput) => {
     if (now > verifyContest.registrationEnd) throw new Error("Inscrições encerradas")
     if (now < verifyContest.registrationStart) throw new Error("Inscrições não abertas")
 
+    const user = await prisma.user.findUnique({
+        where: { id: input.userId },
+        select: {
+            name: true,
+            phone: true,
+            cpf: true,
+            birthDate: true,
+            schooling: true,
+            street: true,
+            city: true,
+            state: true,
+            zipCode: true
+        }
+    })
+
+    if (!user) throw new Error("Usuário não encontrado")
+
+    const requiredFields = [
+        { key: 'phone', label: 'Telefone' },
+        { key: 'cpf', label: 'CPF' },
+        { key: 'birthDate', label: 'Data de Nascimento' },
+        { key: 'schooling', label: 'Escolaridade' },
+        { key: 'street', label: 'Endereço/Rua' },
+        { key: 'city', label: 'Cidade' },
+        { key: 'state', label: 'Estado' },
+        { key: 'zipCode', label: 'CEP' }
+    ]
+
+    const missingFields = requiredFields
+        .filter(field => !user[field.key as keyof typeof user])
+        .map(field => field.label)
+
+    if (missingFields.length > 0) {
+        throw new Error(`Complete seu perfil para se inscrever. Campos faltantes: ${missingFields.join(", ")}`)
+    }
+
     const { documents, ...rest } = input
 
     const newSubciption = await prisma.subscription.create({
@@ -89,4 +125,11 @@ export const getAllSubscription = async (userId?: string) => {
         }
     })
     return getAll
+}
+
+export const getSubscriptionByStatus = async (status: string) => {
+    const getStatus = await prisma.subscription.findMany({
+        where: { status: { in: ["APPROVED", "REPROVED"] } },
+    })
+    return getStatus
 }

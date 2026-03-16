@@ -4,22 +4,26 @@ import { Prisma } from "@prisma/client"
 interface CreateContestPositionInput {
     contestId: string
     name: string
+    schooling: string
     vacancies: number
     salary: number
 }
 
 type UpdateConstestPosition = Partial<
     Omit<CreateContestPositionInput, "contestId">>
+
 export const toDecimal = (value: number) => new Prisma.Decimal(value)
 
 
 export const createContestPosition = async (input: CreateContestPositionInput) => {
+
     const create = await prisma.contestPosition.create({
         data: {
             contestId: input.contestId,
             name: input.name,
             vacancies: input.vacancies,
-            salary: input.salary
+            salary: input.salary,
+            schooling: input.schooling
         }
     })
     return create
