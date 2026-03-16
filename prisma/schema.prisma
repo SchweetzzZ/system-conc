@@ -1,215 +1,201 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-}
-
-enum SubscriptionStatus {
-    PENDING
-    APPROVED
-    REJECTED
-}
-
-enum DocumentStatus {
-    PENDING
-    APPROVED
-    REJECTED
-}
-
-enum StageStatus {
-    PENDING
-    APPROVED
-    ABSENT
-    REJECTED
+  provider = "postgresql"
 }
 
 model User {
-    id             String    @id @default(uuid())
-    name           String
-    email          String    @unique
-    emailVerified  DateTime? @map("email_verified")
-    image          String?
-    phone          String?
-    createdAt      DateTime  @default(now()) @map("created_at")
-    updatedAt      DateTime  @updatedAt @map("updated_at")
-    password       String?
-    role           String    @default("user")
-    banned         Boolean   @default(false)
-    banReason      String?   @map("ban_reason")
-    banExpiresAt   DateTime? @map("ban_expires_at")
-    history        String    @default("") @db.VarChar(400)
-
-    accounts       Account[]
-    sessions       Session[]
-    subscriptions  Subscription[]
-    notifications  Notification[]
-    subscriptionsDocuments SubscriptionDocument[]
+  id                     String                 @id @default(uuid())
+  name                   String
+  email                  String                 @unique
+  emailVerified          DateTime?              @map("email_verified")
+  image                  String?
+  phone                  String?
+  createdAt              DateTime               @default(now()) @map("created_at")
+  updatedAt              DateTime               @updatedAt @map("updated_at")
+  role                   String                 @default("user")
+  banned                 Boolean                @default(false)
+  banReason              String?                @map("ban_reason")
+  banExpiresAt           DateTime?              @map("ban_expires_at")
+  history                String                 @default("") @db.VarChar(400)
+  password               String?
+  cpf                    String?                @unique
+  birthDate              DateTime?              @map("birth_date")
+  schooling              String?
+  street                 String?
+  city                   String?
+  state                  String?
+  zipCode                String?                @map("zip_code")
+  notifications          Notification[]
+  subscriptions          Subscription[]
+  subscriptionsDocuments SubscriptionDocument[]
+  accounts               Account[]
+  sessions               Session[]
 }
 
 model Account {
-    id                String  @id @default(uuid())
-    userId            String
-    type              String
-    provider          String
-    providerAccountId String
-    refresh_token     String?
-    access_token      String?
-    expires_at        Int?
-    token_type        String?
-    scope             String?
-    id_token          String?
-    session_state     String?
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    @@unique([provider, providerAccountId])
-    @@map("account")
+  @@unique([provider, providerAccountId])
+  @@map("account")
 }
 
 model Session {
-    id           String   @id @default(uuid())
-    sessionToken String   @unique
-    userId       String
-    expires      DateTime
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@map("session")
+  @@map("session")
 }
 
 model VerificationToken {
-    identifier String
-    token      String   @unique
-    expires    DateTime
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-    @@unique([identifier, token])
-    @@map("verification_token")
+  @@unique([identifier, token])
+  @@map("verification_token")
 }
 
-// Concurso
 model Contest {
-    id                String    @id @default(uuid())
-    title             String
-    description       String
-    registrationStart DateTime
-    registrationEnd   DateTime
-    examDate          DateTime
-    createdAt         DateTime  @default(now())
-    updatedAt         DateTime  @updatedAt
-
-    positions         ContestPosition[]
-    stages            ContestStage[]
-    notices           Notice[]
-    news              ContestNews[]
-    subscriptions     Subscription[]
+  id                String            @id @default(uuid())
+  title             String
+  description       String
+  registrationStart DateTime
+  registrationEnd   DateTime
+  examDate          DateTime
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  news              ContestNews[]
+  positions         ContestPosition[]
+  stages            ContestStage[]
+  notices           Notice[]
+  subscriptions     Subscription[]
 }
 
-//cargo do concurso
 model ContestPosition {
-    id            String   @id @default(uuid())
-    contestId     String
-    name          String
-    vacancies     Int
-    salary        Decimal @db.Decimal(10,2)
-    createdAt     DateTime @default(now())
-
-    contest       Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
-    subscriptions Subscription[]
+  id            String         @id @default(uuid())
+  contestId     String
+  name          String
+  vacancies     Int
+  salary        Decimal        @db.Decimal(10, 2)
+  createdAt     DateTime       @default(now())
+  contest       Contest        @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
 }
-
 
 model ContestStage {
-    id            String   @id @default(uuid())
-    contestId     String
-    name          String
-    order         Int
-    description   String?
-    date          DateTime @default(now())
-    createdAt     DateTime @default(now())
-
-    contest       Contest                 @relation(fields: [contestId], references: [id], onDelete: Cascade)
-    results       SubscriptionStageResult[]
+  id          String                    @id @default(uuid())
+  contestId   String
+  name        String
+  order       Int
+  date        DateTime                  @default(now())
+  createdAt   DateTime                  @default(now())
+  description String?
+  contest     Contest                   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  results     SubscriptionStageResult[]
 }
 
 model Notice {
-    id        String   @id @default(uuid())
-    contestId String
-    title     String
-    fileUrl   String
-    fileKey   String
-    createdAt DateTime @default(now())
-
-    contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  contestId String
+  title     String
+  fileUrl   String
+  fileKey   String
+  createdAt DateTime @default(now())
+  contest   Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
 }
 
 model ContestNews {
-    id        String   @id @default(uuid())
-    contestId String
-    title     String
-    content   String
-    createdAt DateTime @default(now())
-
-    contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  contestId String
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  contest   Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {
-    id         String   @id @default(uuid())
-    userId     String
-    contestId  String
-    positionId String
-    status     String   @default("PENDING")
-    createdAt  DateTime @default(now())
+  id         String                    @id @default(uuid())
+  userId     String
+  contestId  String
+  positionId String
+  status     String                    @default("PENDING")
+  createdAt  DateTime                  @default(now())
+  contest    Contest                   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  position   ContestPosition           @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  user       User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents  SubscriptionDocument[]
+  results    SubscriptionStageResult[]
 
-    user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-    contest  Contest           @relation(fields: [contestId], references: [id], onDelete: Cascade)
-    position ContestPosition   @relation(fields: [positionId], references: [id], onDelete: Cascade)
-
-    documents SubscriptionDocument[]
-    results   SubscriptionStageResult[]
-
-    @@unique([userId, contestId])
+  @@unique([userId, contestId])
 }
 
 model SubscriptionDocument {
-    id             String         @id @default(uuid())
-    userId         String
-    subscriptionId String
-    type           String
-    fileUrl        String
-    fileKey        String
-    status         DocumentStatus @default(PENDING)
-    createdAt      DateTime       @default(now())
-
-    user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-    subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  id             String         @id @default(uuid())
+  userId         String
+  subscriptionId String
+  type           String
+  fileUrl        String
+  fileKey        String
+  status         DocumentStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  subscription   Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SubscriptionStageResult {
-    id             String      @id @default(uuid())
-    subscriptionId String
-    stageId        String
-    score          Float?
-    result         StageStatus
-    createdAt      DateTime    @default(now())
-
-    subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-    stage        ContestStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  subscriptionId String
+  stageId        String
+  score          Float?
+  result         StageStatus
+  createdAt      DateTime     @default(now())
+  stage          ContestStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
-    id        String   @id @default(uuid())
-    userId    String
-    title     String
-    message   String
-    read      Boolean  @default(false)
-    createdAt DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum SubscriptionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum StageStatus {
+  PENDING
+  APPROVED
+  ABSENT
+  REJECTED
 }

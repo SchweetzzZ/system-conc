@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma"
 import { CreateSubscriptionInput, UpdateSubscriptionInput } from "./subscriptionSchema"
+import { createNotification } from "@/lib/notification"
 
 export const createSubscription = async (input: CreateSubscriptionInput) => {
     const verifyContest = await prisma.contest.findUnique({
@@ -15,9 +16,33 @@ export const createSubscription = async (input: CreateSubscriptionInput) => {
     if (now > verifyContest.registrationEnd) throw new Error("Inscrições encerradas")
     if (now < verifyContest.registrationStart) throw new Error("Inscrições não abertas")
 
+    const { documents, ...rest } = input
+
     const newSubciption = await prisma.subscription.create({
-        data: input
+        data: {
+            ...rest,
+            documents: {
+                create: documents?.map(doc => ({
+                    userId: input.userId,
+                    type: doc.type,
+                    fileUrl: doc.fileUrl,
+                    fileKey: doc.fileKey,
+                }))
+            }
+        },
+        include: {
+            contest: true
+        }
     })
+
+    // Notify user about subscription
+    await createNotification({
+        userId: newSubciption.userId,
+        title: "Inscrição Realizada",
+        message: `Sua inscrição para o concurso "${newSubciption.contest.title}" foi realizada com sucesso!`,
+        sendEmailNotification: true
+    })
+
     return newSubciption
 }
 
@@ -43,7 +68,25 @@ export const getSubscriptionById = async (id: string) => {
     return get
 }
 
-export const getAllSubscription = async () => {
-    const getAll = await prisma.subscription.findMany()
+export const getAllSubscription = async (userId?: string) => {
+    const getAll = await prisma.subscription.findMany({
+        where: userId ? { userId } : {},
+        include: {
+            contest: {
+                include: {
+                    stages: { orderBy: { order: 'asc' } },
+                    notices: { orderBy: { createdAt: 'desc' } },
+                    news: { orderBy: { createdAt: 'desc' } }
+                }
+            },
+            position: true,
+            results: {
+                include: { stage: true }
+            }
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    })
     return getAll
 }

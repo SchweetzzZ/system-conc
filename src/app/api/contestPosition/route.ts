@@ -25,13 +25,10 @@ export async function POST(request: Request) {
 
 export async function GET() {
     try {
-        const getAll = await getAllContestPosition
-        return getAll
+        const getAll = await getAllContestPosition()
+        return NextResponse.json(getAll)
     } catch (error: any) {
         console.log("erro no GET: ", error)
-        if (error.name === "ZodError") {
-            return NextResponse.json({ errors: error.errors }, { status: 400 });
-        }
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }

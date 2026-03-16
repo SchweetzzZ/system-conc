@@ -1,19 +1,24 @@
 import { NextResponse } from "next/server"
+export const dynamic = 'force-dynamic'
+
 import {
     createSubscription, updateSubscription, deleteSubscription, getSubscriptionById,
     getAllSubscription
 } from "./service"
 import { baseSchema } from "./subscriptionSchema"
-import { adminGuard } from "@/lib/api-guard"
+import { auth } from "@/auth"
 
 export async function POST(req: Request) {
     try {
-        const guard = await adminGuard()
-        if (!guard.authorized) {
-            return guard.response
+        const session = await auth()
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
         const body = await req.json()
+        // Inject userId from session to pass validation
+        body.userId = session.user.id
+
         const parsed = baseSchema.safeParse(body)
         if (!parsed.success) {
             return NextResponse.json(
@@ -34,7 +39,12 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
     try {
-        const subscriptions = await getAllSubscription()
+        const session = await auth()
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
+
+        const subscriptions = await getAllSubscription(session.user.id)
         return NextResponse.json(subscriptions)
     } catch (error) {
         console.error("Erro ao buscar inscrições:", error)

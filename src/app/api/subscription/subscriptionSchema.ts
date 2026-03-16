@@ -1,10 +1,15 @@
 import { z } from "zod"
 
 export const baseSchema = z.object({
-    userId: z.string().uuid(),
-    contestId: z.string().uuid(),
-    positionId: z.string().uuid(),
-    status: z.enum(["PENDING", "APPROVED", "ABSENT", "REJECTED"]),
+    userId: z.string(),
+    contestId: z.string(),
+    positionId: z.string(),
+    status: z.enum(["PENDING", "APPROVED", "ABSENT", "REJECTED"]).default("PENDING"),
+    documents: z.array(z.object({
+        type: z.string(),
+        fileUrl: z.string(),
+        fileKey: z.string(),
+    })).optional(),
     createdAt: z.date().optional(),
 })
 

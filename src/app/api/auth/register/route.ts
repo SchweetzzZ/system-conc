@@ -6,14 +6,19 @@ import { registerSchema } from "./register.schema"
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { name, email, password } = registerSchema.parse(body)
+        const { name, email, password, cpf } = registerSchema.parse(body)
+        const cpfClean = cpf.replace(/\D/g, '')
 
-        const existUser = await prisma.user.findUnique({
-            where: { email }
-        })
+        const [existEmail, existCpf] = await Promise.all([
+            prisma.user.findUnique({ where: { email } }),
+            prisma.user.findUnique({ where: { cpf: cpfClean } })
+        ])
 
-        if (existUser) {
-            return NextResponse.json({ message: "Usuário já existe" }, { status: 400 })
+        if (existEmail) {
+            return NextResponse.json({ message: "E-mail já cadastrado" }, { status: 400 })
+        }
+        if (existCpf) {
+            return NextResponse.json({ message: "CPF já cadastrado" }, { status: 400 })
         }
 
         const hashPassword = await bcrypt.hash(password, 10)
@@ -23,6 +28,7 @@ export async function POST(request: Request) {
                 name,
                 email,
                 password: hashPassword,
+                cpf: cpfClean,
                 role: "USER"
             }
         })

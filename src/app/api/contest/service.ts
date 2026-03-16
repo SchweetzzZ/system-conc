@@ -23,7 +23,14 @@ export const createContest = async (input: CreateContestInput) => {
 }
 
 export const getAllContests = async () => {
-    const getcont = prisma.contest.findMany();
+    const getcont = prisma.contest.findMany({
+        include: {
+            positions: true,
+            stages: { orderBy: { order: 'asc' } },
+            notices: { orderBy: { createdAt: 'desc' } },
+            news: { orderBy: { createdAt: 'desc' } }
+        }
+    });
     return getcont;
 }
 

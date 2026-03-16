@@ -11,8 +11,11 @@ export async function POST(request: Request) {
     }
     try {
         const body = await request.json();
-        const validatedData = contestSchema.parse(body);
-        const create = await createContest(validatedData);
+        const parsed = await contestSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Dados inválidos", details: parsed.error.format() }, { status: 400 })
+        }
+        const create = await createContest(parsed.data);
         return NextResponse.json(create, { status: 201 });
     } catch (error: any) {
         console.error("Erro no POST /api/contest:", error); // Adicionado para debug
