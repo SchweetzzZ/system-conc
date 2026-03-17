@@ -3,6 +3,15 @@ import { CreateSubscriptionInput, UpdateSubscriptionInput } from "./subscription
 import { createNotification } from "@/lib/notification"
 
 export const createSubscription = async (input: CreateSubscriptionInput) => {
+
+    const verifySubscription = await prisma.subscription.findFirst({
+        where: {
+            userId: input.userId,
+            contestId: input.contestId
+        }
+    })
+    if (verifySubscription) throw new Error("Você já está inscrito neste concurso")
+
     const verifyContest = await prisma.contest.findUnique({
         where: { id: input.contestId },
         select: {

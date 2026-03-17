@@ -31,12 +31,12 @@ export default function Dashboard() {
     const [profile, setProfile] = useState<any>(null)
     const [isLoadingData, setIsLoadingData] = useState(false)
     const [isSavingProfile, setIsSavingProfile] = useState(false)
-    
+
     // Inscription Flow State
-    const [subStep, setSubStep] = useState(1) 
+    const [subStep, setSubStep] = useState(1)
     const [selectedContest, setSelectedContest] = useState<any>(null)
     const [selectedPosition, setSelectedPosition] = useState<any>(null)
-    const [uploadedDocs, setUploadedDocs] = useState<{type: string, fileUrl: string, fileKey: string}[]>([])
+    const [uploadedDocs, setUploadedDocs] = useState<{ type: string, fileUrl: string, fileKey: string }[]>([])
 
     const fetchData = useCallback(async () => {
         if (!session) return
@@ -145,9 +145,8 @@ export default function Dashboard() {
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                                activeTab === item.id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                            }`}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === item.id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                }`}
                         >
                             <span>{item.icon}</span> {item.label}
                         </button>
@@ -194,7 +193,7 @@ export default function Dashboard() {
 
                     {activeTab === "contests" && (
                         <div className="grid gap-6">
-                             {contests.map(c => (
+                            {contests.map(c => (
                                 <div key={c.id} className="p-8 bg-white border border-slate-200 rounded-2xl">
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
@@ -202,7 +201,7 @@ export default function Dashboard() {
                                             <p className="text-xs text-slate-500 font-medium">{c.description}</p>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                                         <div><p className="text-[9px] font-bold text-slate-400 uppercase">Inscrições Até</p><p className="text-xs font-bold">{new Date(c.registrationEnd).toLocaleDateString()}</p></div>
                                         <div><p className="text-[9px] font-bold text-slate-400 uppercase">Prova</p><p className="text-xs font-bold">{new Date(c.examDate).toLocaleDateString()}</p></div>
@@ -211,7 +210,7 @@ export default function Dashboard() {
                                     <div className="space-y-4 border-t border-slate-50 pt-6">
                                         <p className="text-[10px] font-bold uppercase text-slate-400">Documentos Oficiais</p>
                                         <div className="flex flex-wrap gap-2">
-                                            {c.notices?.map((n:any) => (
+                                            {c.notices?.map((n: any) => (
                                                 <a key={n.id} href={n.fileUrl} target="_blank" className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-100">📎 {n.title}</a>
                                             ))}
                                             {c.notices?.length === 0 && <p className="text-[10px] text-slate-300">Nenhum edital publicado ainda.</p>}
@@ -228,7 +227,7 @@ export default function Dashboard() {
                                                 <button onClick={() => setActiveTab('profile')} className="mt-2 text-rose-600 underline">Ir para Meu Perfil &rarr;</button>
                                             </div>
                                         )}
-                                        <button 
+                                        <button
                                             disabled={!isProfileComplete()}
                                             onClick={() => { setSelectedContest(c); setSubStep(1); setActiveTab('contests_flow'); }}
                                             className="w-full py-4 bg-slate-900 text-white rounded-xl text-xs font-bold tracking-widest uppercase hover:bg-black disabled:opacity-20 disabled:cursor-not-allowed transition-all"
@@ -237,29 +236,29 @@ export default function Dashboard() {
                                         </button>
                                     </div>
                                 </div>
-                             ))}
+                            ))}
                         </div>
                     )}
 
                     {activeTab === 'contests_flow' && (
                         <div className="max-w-2xl bg-white border border-slate-200 p-10 rounded-2xl">
-                             <div className="flex items-center gap-3 mb-8">
+                            <div className="flex items-center gap-3 mb-8">
                                 <button onClick={() => setActiveTab('contests')} className="text-slate-400">←</button>
                                 <h3 className="text-lg font-bold">Nova Inscrição: {selectedContest?.title}</h3>
-                             </div>
+                            </div>
 
-                             {subStep === 1 ? (
+                            {subStep === 1 ? (
                                 <div className="space-y-6">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-bold uppercase text-slate-400">Escolha o Cargo</label>
-                                        <select onChange={(e) => setSelectedPosition(selectedContest?.positions.find((p:any) => p.id === e.target.value))} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none">
+                                        <select onChange={(e) => setSelectedPosition(selectedContest?.positions.find((p: any) => p.id === e.target.value))} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none">
                                             <option value="">Selecione...</option>
-                                            {selectedContest?.positions.map((p:any) => <option key={p.id} value={p.id}>{p.name} - R$ {p.salary}</option>)}
+                                            {selectedContest?.positions.map((p: any) => <option key={p.id} value={p.id}>{p.name} - R$ {p.salary}</option>)}
                                         </select>
                                     </div>
                                     <button disabled={!selectedPosition} onClick={() => setSubStep(2)} className="w-full py-4 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase disabled:opacity-50">Próximo Passo &rarr;</button>
                                 </div>
-                             ) : (
+                            ) : (
                                 <div className="space-y-8">
                                     <p className="text-xs font-medium text-slate-500">Faça o upload dos documentos obrigatórios (PDF ou Imagem):</p>
                                     <div className="grid grid-cols-2 gap-4">
@@ -276,7 +275,7 @@ export default function Dashboard() {
                                     </div>
                                     <button onClick={handleSubscriptionSubmit} className="w-full py-4 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase">Finalizar Inscrição</button>
                                 </div>
-                             )}
+                            )}
                         </div>
                     )}
 
@@ -286,13 +285,12 @@ export default function Dashboard() {
                                 <div key={i} className="p-6 bg-white border border-slate-200 rounded-2xl">
                                     <div className="flex justify-between items-center mb-6">
                                         <div>
-                                            <span className="text-[9px] font-bold bg-slate-100 px-2 py-1 rounded text-slate-500 uppercase">Protocolo: {sub.id.slice(0,8)}</span>
+                                            <span className="text-[9px] font-bold bg-slate-100 px-2 py-1 rounded text-slate-500 uppercase">Protocolo: {sub.id.slice(0, 8)}</span>
                                             <h3 className="text-lg font-bold mt-2">{sub.contest?.title}</h3>
                                             <p className="text-xs font-medium text-slate-400">{sub.position?.name}</p>
                                         </div>
-                                        <div className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase ${
-                                            sub.status === 'APPROVED' ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-400'
-                                        }`}>
+                                        <div className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase ${sub.status === 'APPROVED' ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-400'
+                                            }`}>
                                             {sub.status}
                                         </div>
                                     </div>
@@ -301,8 +299,8 @@ export default function Dashboard() {
                                     <div className="border-t border-slate-50 pt-6">
                                         <p className="text-[10px] font-bold uppercase text-slate-400 mb-4 tracking-tighter">Etapas e Resultados</p>
                                         <div className="space-y-3">
-                                            {sub.contest?.stages?.map((stage:any) => {
-                                                const res = sub.results?.find((r:any) => r.stageId === stage.id);
+                                            {sub.contest?.stages?.map((stage: any) => {
+                                                const res = sub.results?.find((r: any) => r.stageId === stage.id);
                                                 return (
                                                     <div key={stage.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                                                         <div>
@@ -361,8 +359,8 @@ export default function Dashboard() {
 
                     {activeTab === "notifications" && (
                         <div className="grid gap-4 max-w-2xl">
-                             {notifications.map((n, i) => <NotificationItem key={i} {...n} date={new Date(n.createdAt).toLocaleDateString()} />)}
-                             {notifications.length === 0 && <p className="p-10 text-center text-xs font-medium text-slate-400 border border-dashed border-slate-200 rounded-2xl">Nenhuma mensagem recente.</p>}
+                            {notifications.map((n, i) => <NotificationItem key={i} {...n} date={new Date(n.createdAt).toLocaleDateString()} />)}
+                            {notifications.length === 0 && <p className="p-10 text-center text-xs font-medium text-slate-400 border border-dashed border-slate-200 rounded-2xl">Nenhuma mensagem recente.</p>}
                         </div>
                     )}
                 </div>

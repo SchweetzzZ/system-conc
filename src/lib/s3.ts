@@ -42,7 +42,7 @@ export async function deleteFromS3(key: string) {
 
 export function getFileUrl(key: string) {
   if (!key) return "";
-  
+
   const bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_REGION || "us-east-1";
   const endpoint = process.env.AWS_ENDPOINT;
