@@ -12,6 +12,7 @@ export default function AdminDashboard() {
     const [adminSubscriptions, setAdminSubscriptions] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [selectedSub, setSelectedSub] = useState<any>(null)
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, targetId: string, confirmText: string }>({ isOpen: false, targetId: "", confirmText: "" })
 
     // Selection for sub-tabs
     const [selectedContestId, setSelectedContestId] = useState("")
@@ -20,7 +21,7 @@ export default function AdminDashboard() {
     // Form states
     const [contestForm, setContestForm] = useState({ title: "", description: "", registrationStart: "", registrationEnd: "", examDate: "" })
     const [positionForm, setPositionForm] = useState({ contestId: "", name: "", vacancies: 0, salary: 0, schooling: "" })
-    const [stageForm, setStageForm] = useState({ contestId: "", name: "", order: 1, description: "" })
+    const [stageForm, setStageForm] = useState({ contestId: "", name: "", order: 1, description: "", date: "" })
     const [newsForm, setNewsForm] = useState({ contestId: "", title: "", content: "" })
     const [noticeForm, setNoticeForm] = useState({ contestId: "", title: "", file: null as File | null })
     const [resultForm, setResultForm] = useState({ subscriptionId: "", stageId: "", score: 0, result: "PENDING" })
@@ -52,11 +53,13 @@ export default function AdminDashboard() {
     const handleAction = async (url: string, method: string, body: any, successMsg: string) => {
         setIsLoading(true)
         try {
-            const res = await fetch(url, {
+            const options: RequestInit = {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            })
+            }
+            if (body) options.body = JSON.stringify(body)
+
+            const res = await fetch(url, options)
             if (res.ok) {
                 alert(`✅ ${successMsg}`)
                 fetchData()
@@ -86,7 +89,8 @@ export default function AdminDashboard() {
             constestId: stageForm.contestId,
             name: stageForm.name,
             order: Number(stageForm.order),
-            description: stageForm.description
+            description: stageForm.description,
+            date: new Date(stageForm.date).toISOString()
         }, "Etapa criada!")
     }
 
@@ -102,10 +106,15 @@ export default function AdminDashboard() {
         try {
             const preRes = await fetch("/api/upload/presigned", {
                 method: "POST",
-                body: JSON.stringify({ fileName: noticeForm.file.name, contentType: noticeForm.file.type, fileSize: noticeForm.file.size })
+                body: JSON.stringify({ 
+                    fileName: noticeForm.file.name, 
+                    contentType: noticeForm.file.type, 
+                    fileSize: noticeForm.file.size,
+                    folder: "notices"
+                })
             })
             const { data } = await preRes.json()
-            await fetch(data.uploadUrl, { method: "PUT", body: noticeForm.file, headers: { "Content-Type": noticeForm.file.type } })
+            await fetch(data.uploadUrl, { method: "PUT", body: noticeForm.file })
             
             await handleAction("/api/notice", "POST", {
                 contestId: noticeForm.contestId,
@@ -123,6 +132,16 @@ export default function AdminDashboard() {
             ...resultForm,
             score: Number(resultForm.score)
         }, "Resultado lançado!")
+    }
+
+    const handleDeleteStage = (id: string) => {
+        setDeleteModal({ isOpen: true, targetId: id, confirmText: "" })
+    }
+
+    const confirmDeleteStage = async () => {
+        if (deleteModal.confirmText.toLowerCase() !== "deletar") return
+        const success = await handleAction(`/api/contestStage/${deleteModal.targetId}`, "DELETE", null, "Etapa excluída!")
+        if (success) setDeleteModal({ isOpen: false, targetId: "", confirmText: "" })
     }
 
     const handleUpdateSubStatus = async (id: string, status: string) => {
@@ -250,30 +269,71 @@ export default function AdminDashboard() {
                         )}
 
                         {activeTab === "stages" && (
-                            <form onSubmit={onCreateStage} className="space-y-6">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold uppercase text-slate-400">Concurso</label>
-                                    <select value={stageForm.contestId} onChange={e => setStageForm({...stageForm, contestId: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" required>
-                                        <option value="">Selecione...</option>
-                                        {contests.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                                    </select>
-                                </div>
-                                <div className="grid grid-cols-4 gap-4">
-                                    <div className="col-span-3 space-y-1">
-                                        <label className="text-[10px] font-bold uppercase text-slate-400">Nome da Etapa</label>
-                                        <input value={stageForm.name} onChange={e => setStageForm({...stageForm, name: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" placeholder="Ex: Prova Objetiva" required />
-                                    </div>
+                            <div className="space-y-12">
+                                <form onSubmit={onCreateStage} className="space-y-6">
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-bold uppercase text-slate-400">Ordem</label>
-                                        <input type="number" value={stageForm.order} onChange={e => setStageForm({...stageForm, order: Number(e.target.value)})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" required />
+                                        <label className="text-[10px] font-bold uppercase text-slate-400">Concurso</label>
+                                        <select value={stageForm.contestId} onChange={e => setStageForm({...stageForm, contestId: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" required>
+                                            <option value="">Selecione...</option>
+                                            {contests.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <div className="col-span-3 space-y-1">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Nome da Etapa</label>
+                                            <input value={stageForm.name} onChange={e => setStageForm({...stageForm, name: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" placeholder="Ex: Prova Objetiva" required />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Ordem</label>
+                                            <input type="number" value={stageForm.order} onChange={e => setStageForm({...stageForm, order: Number(e.target.value)})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" required />
+                                        </div>
+                                    </div>
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Data da Etapa</label>
+                                            <input type="date" value={stageForm.date} onChange={e => setStageForm({...stageForm, date: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium" required />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Instruções/Descrição</label>
+                                            <textarea value={stageForm.description} onChange={e => setStageForm({...stageForm, description: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium h-12" />
+                                        </div>
+                                    </div>
+                                    <button disabled={isLoading} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold text-sm">Cadastrar Etapa</button>
+                                </form>
+
+                                <div className="border-t border-slate-100 pt-10">
+                                    <h3 className="text-lg font-bold mb-6">Etapas Atuais</h3>
+                                    <div className="space-y-8">
+                                        {contests.map(contest => (
+                                            <div key={contest.id} className="space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="w-1 h-3 bg-slate-900 rounded-full"></span>
+                                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{contest.title}</h4>
+                                                </div>
+                                                <div className="grid gap-3">
+                                                    {contest.stages?.map((stage: any) => (
+                                                        <div key={stage.id} className="flex items-center justify-between p-5 bg-slate-50 border border-slate-100 rounded-2xl group hover:bg-white hover:shadow-sm transition-all">
+                                                            <div>
+                                                                <p className="text-sm font-bold text-slate-900">{stage.name} <span className="text-slate-400 font-normal ml-2">#ORDEM {stage.order}</span></p>
+                                                                <p className="text-xs text-slate-500 mt-1">{new Date(stage.date).toLocaleDateString()} • {stage.description || "Sem descrição"}</p>
+                                                            </div>
+                                                            <button 
+                                                                onClick={() => handleDeleteStage(stage.id)}
+                                                                className="px-4 py-2 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-bold uppercase opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-100"
+                                                            >
+                                                                Remover
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    {(!contest.stages || contest.stages.length === 0) && (
+                                                        <p className="p-8 text-center border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-bold text-slate-300 uppercase italic">Nenhuma etapa definida</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold uppercase text-slate-400">Instruções/Descrição</label>
-                                    <textarea value={stageForm.description} onChange={e => setStageForm({...stageForm, description: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium h-20" />
-                                </div>
-                                <button disabled={isLoading} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold text-sm">Cadastrar Etapa</button>
-                            </form>
+                            </div>
                         )}
 
                         {activeTab === "homologate" && (
@@ -450,6 +510,49 @@ export default function AdminDashboard() {
                         <div className="flex gap-4 pt-8 border-t border-slate-100">
                             <button onClick={() => handleUpdateSubStatus(selectedSub.id, "APPROVED")} className="flex-1 py-4 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black">Aprovar Inscrição</button>
                             <button onClick={() => handleUpdateSubStatus(selectedSub.id, "REJECTED")} className="flex-1 py-4 border border-rose-200 text-rose-600 rounded-xl font-bold text-sm hover:bg-rose-50">Rejeitar Inscrição</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Custom Delete Confirmation Modal */}
+            {deleteModal.isOpen && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] flex items-center justify-center p-6">
+                    <div className="bg-white rounded-3xl w-full max-w-md p-10 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+                        <div className="text-center mb-8">
+                            <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">⚠️</div>
+                            <h2 className="text-xl font-bold text-slate-900 mb-2">Confirmar Exclusão</h2>
+                            <p className="text-sm text-slate-500 leading-relaxed">
+                                Esta ação é irreversível e removerá permanentemente a etapa e quaisquer dados vinculados.
+                            </p>
+                        </div>
+                        
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase text-slate-400 block text-center">Digite <span className="text-rose-500">deletar</span> para confirmar</label>
+                                <input 
+                                    autoFocus
+                                    value={deleteModal.confirmText}
+                                    onChange={e => setDeleteModal({...deleteModal, confirmText: e.target.value})}
+                                    placeholder="Palavra de segurança"
+                                    className="w-full px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center text-sm font-bold focus:border-rose-200 focus:bg-white outline-none transition-all placeholder:text-slate-300"
+                                />
+                            </div>
+                            
+                            <div className="flex flex-col gap-3">
+                                <button 
+                                    disabled={deleteModal.confirmText.toLowerCase() !== "deletar" || isLoading}
+                                    onClick={confirmDeleteStage}
+                                    className="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold text-sm hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 disabled:opacity-20 disabled:shadow-none disabled:grayscale"
+                                >
+                                    {isLoading ? "Processando..." : "Confirmar Exclusão Definitiva"}
+                                </button>
+                                <button 
+                                    onClick={() => setDeleteModal({ isOpen: false, targetId: "", confirmText: "" })}
+                                    className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all font-mono tracking-tighter"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

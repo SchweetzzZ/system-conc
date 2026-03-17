@@ -5,6 +5,7 @@ export const baseSchema = z.object({
     name: z.string(),
     order: z.number(),
     description: z.string(),
+    date: z.coerce.date(),
 })
 
 export const updateSchema = baseSchema.partial()

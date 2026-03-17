@@ -2,23 +2,22 @@
 import { signOut, useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
 
 // Components
 const StatCard = ({ title, value }: { title: string, value: string | number }) => (
-    <div className="p-6 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors">
-        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{title}</h3>
-        <p className={`text-3xl font-bold text-slate-900`}>{value}</p>
+    <div className="p-6 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors shadow-sm">
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{title}</h3>
+        <p className={`text-4xl font-extrabold text-slate-900`}>{value}</p>
     </div>
 )
 
 const NotificationItem = ({ title, message, date, read }: { title: string, message: string, date: string, read: boolean }) => (
     <div className={`p-5 rounded-2xl border transition-all ${read ? 'border-slate-100 opacity-60' : 'border-slate-200 bg-white shadow-sm'}`}>
-        <div className="flex justify-between items-start mb-1">
-            <h4 className="text-xs font-bold text-slate-900">{title}</h4>
-            <span className="text-[10px] font-bold text-slate-400">{date}</span>
+        <div className="flex justify-between items-start mb-2">
+            <h4 className="text-sm font-bold text-slate-900">{title}</h4>
+            <span className="text-xs font-bold text-slate-400">{date}</span>
         </div>
-        <p className="text-slate-500 text-[11px] leading-relaxed line-clamp-2">{message}</p>
+        <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">{message}</p>
     </div>
 )
 
@@ -36,7 +35,8 @@ export default function Dashboard() {
     const [subStep, setSubStep] = useState(1)
     const [selectedContest, setSelectedContest] = useState<any>(null)
     const [selectedPosition, setSelectedPosition] = useState<any>(null)
-    const [uploadedDocs, setUploadedDocs] = useState<{ type: string, fileUrl: string, fileKey: string }[]>([])
+    const [selectedFiles, setSelectedFiles] = useState<{ [key: string]: File }>({})
+    const [isSubmittingSubscription, setIsSubmittingSubscription] = useState(false)
 
     const fetchData = useCallback(async () => {
         if (!session) return
@@ -96,29 +96,64 @@ export default function Dashboard() {
 
     const isProfileComplete = () => getMissingFields().length === 0
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
         const file = e.target.files?.[0]
         if (!file) return
-        try {
-            const preRes = await fetch('/api/upload/presigned', { method: 'POST', body: JSON.stringify({ fileName: file.name, contentType: file.type, fileSize: file.size }) })
-            const { data } = await preRes.json()
-            await fetch(data.uploadUrl, { method: 'PUT', body: file })
-            setUploadedDocs(prev => [...prev.filter(d => d.type !== type), { type, fileUrl: data.fileUrl, fileKey: data.fileKey }])
-            alert(`✅ ${type} carregado!`)
-        } catch (err) { alert("Erro no upload") }
+        setSelectedFiles(prev => ({ ...prev, [type]: file }))
+        alert(`✅ ${type} selecionado!`)
     }
 
     const handleSubscriptionSubmit = async () => {
-        if (uploadedDocs.length < 2) return alert("Envie RG e Comprovante.")
+        if (!selectedFiles["RG"] || !selectedFiles["RESIDENCIA"]) {
+            return alert("Por favor, selecione tanto o RG quanto o Comprovante de Residência.")
+        }
+
+        setIsSubmittingSubscription(true)
         try {
+            const uploadedDocsArray: { type: string, fileUrl: string, fileKey: string }[] = []
+            const fileTypes = ["RG", "RESIDENCIA"]
+
+            for (const type of fileTypes) {
+                const file = selectedFiles[type]
+                const preRes = await fetch('/api/upload/presigned', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        fileName: file.name,
+                        contentType: file.type,
+                        fileSize: file.size,
+                        folder: "subscriptions"
+                    })
+                })
+                const { data } = await preRes.json()
+                await fetch(data.uploadUrl, { method: 'PUT', body: file })
+                uploadedDocsArray.push({ type, fileUrl: data.fileUrl, fileKey: data.fileKey })
+            }
+
             const res = await fetch('/api/subscription', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contestId: selectedContest.id, positionId: selectedPosition.id, documents: uploadedDocs })
+                body: JSON.stringify({
+                    contestId: selectedContest.id,
+                    positionId: selectedPosition.id,
+                    documents: uploadedDocsArray
+                })
             })
-            if (res.ok) { alert("🎉 Inscrição Realizada!"); fetchData(); setActiveTab('subscriptions'); setSubStep(1); setUploadedDocs([]) }
-            else { alert("❌ Erro na inscrição.") }
-        } catch (err) { alert("⚠️ Erro") }
+
+            if (res.ok) {
+                alert("🎉 Inscrição Realizada!")
+                fetchData()
+                setActiveTab('subscriptions')
+                setSubStep(1)
+                setSelectedFiles({})
+            } else {
+                alert("❌ Erro na inscrição.")
+            }
+        } catch (err) {
+            console.error(err)
+            alert("⚠️ Erro ao processar inscrição / upload")
+        } finally {
+            setIsSubmittingSubscription(false)
+        }
     }
 
     if (status === "loading") return <div className="h-screen flex items-center justify-center font-bold text-slate-300">Carregando...</div>
@@ -176,16 +211,16 @@ export default function Dashboard() {
 
                             <div className="grid md:grid-cols-2 gap-10">
                                 <div className="space-y-4">
-                                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Notificações Recentes</h2>
+                                    <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400">Notificações Recentes</h2>
                                     <div className="space-y-3">
                                         {notifications.slice(0, 3).map((n, i) => <NotificationItem key={i} {...n} date={new Date(n.createdAt).toLocaleDateString()} />)}
-                                        {notifications.length === 0 && <p className="text-[10px] text-slate-300 font-bold">Sem novidades por enquanto.</p>}
+                                        {notifications.length === 0 && <p className="text-xs text-slate-300 font-bold">Sem novidades por enquanto.</p>}
                                     </div>
                                 </div>
-                                <div className="bg-slate-900 text-white p-8 rounded-3xl flex flex-col justify-center">
-                                    <h3 className="text-lg font-bold mb-2">Complete seu Perfil</h3>
-                                    <p className="text-slate-400 text-xs leading-relaxed mb-6">Para validar sua inscrição, precisamos que seus dados básicos estejam atualizados.</p>
-                                    <button onClick={() => setActiveTab('profile')} className="px-6 py-3 bg-white text-slate-900 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all">Verificar Dados</button>
+                                <div className="bg-slate-900 text-white p-10 rounded-3xl flex flex-col justify-center">
+                                    <h3 className="text-xl font-bold mb-3">Complete seu Perfil</h3>
+                                    <p className="text-slate-400 text-sm leading-relaxed mb-6">Para validar sua inscrição, precisamos que seus dados básicos estejam atualizados.</p>
+                                    <button onClick={() => setActiveTab('profile')} className="px-8 py-4 bg-white text-slate-900 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all">Verificar Dados</button>
                                 </div>
                             </div>
                         </div>
@@ -207,14 +242,36 @@ export default function Dashboard() {
                                         <div><p className="text-[9px] font-bold text-slate-400 uppercase">Prova</p><p className="text-xs font-bold">{new Date(c.examDate).toLocaleDateString()}</p></div>
                                     </div>
 
-                                    <div className="space-y-4 border-t border-slate-50 pt-6">
-                                        <p className="text-[10px] font-bold uppercase text-slate-400">Documentos Oficiais</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {c.notices?.map((n: any) => (
-                                                <a key={n.id} href={n.fileUrl} target="_blank" className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-100">📎 {n.title}</a>
-                                            ))}
-                                            {c.notices?.length === 0 && <p className="text-[10px] text-slate-300">Nenhum edital publicado ainda.</p>}
+                                    <div className="space-y-6 border-t border-slate-100 pt-8">
+                                        <div className="space-y-4">
+                                            <p className="text-xs font-bold uppercase text-slate-400">Documentos Oficiais</p>
+                                            <div className="flex flex-wrap gap-3">
+                                                {c.notices?.map((n: any) => (
+                                                    <a key={n.id} href={n.fileUrl} target="_blank" className="px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all shadow-sm">📎 {n.title}</a>
+                                                ))}
+                                                {c.notices?.length === 0 && <p className="text-sm text-slate-300 font-medium">Nenhum edital publicado ainda.</p>}
+                                            </div>
                                         </div>
+
+                                        {c.news && c.news.length > 0 && (
+                                            <div className="space-y-4 bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                                                <p className="text-xs font-bold uppercase text-slate-400">Últimos Comunicados</p>
+                                                <div className="space-y-3">
+                                                    {c.news.slice(0, 2).map((news: any) => (
+                                                        <div key={news.id} className="p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
+                                                            <div className="flex justify-between items-center mb-2">
+                                                                <h4 className="text-xs font-bold text-slate-900">{news.title}</h4>
+                                                                <span className="text-[10px] font-bold text-slate-400">{new Date(news.createdAt).toLocaleDateString()}</span>
+                                                            </div>
+                                                            <p className="text-xs text-slate-500 line-clamp-1">{news.content}</p>
+                                                        </div>
+                                                    ))}
+                                                    {c.news.length > 2 && (
+                                                        <p className="text-[11px] text-center font-bold text-slate-400 italic">Mais {c.news.length - 2} avisos disponíveis após a inscrição</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="mt-8 space-y-3">
@@ -265,15 +322,17 @@ export default function Dashboard() {
                                         <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                                             <p className="text-[10px] font-bold mb-3 uppercase">RG / Identidade</p>
                                             <input type="file" onChange={(e) => handleFileUpload(e, "RG")} className="text-[10px] w-full" />
-                                            {uploadedDocs.find(d => d.type === "RG") && <p className="text-[10px] text-green-600 font-bold mt-2">✓ Carregado</p>}
+                                            {selectedFiles["RG"] && <p className="text-[10px] text-green-600 font-bold mt-2">✓ Selecionado</p>}
                                         </div>
                                         <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                                             <p className="text-[10px] font-bold mb-3 uppercase">Comprovante Residência</p>
                                             <input type="file" onChange={(e) => handleFileUpload(e, "RESIDENCIA")} className="text-[10px] w-full" />
-                                            {uploadedDocs.find(d => d.type === "RESIDENCIA") && <p className="text-[10px] text-green-600 font-bold mt-2">✓ Carregado</p>}
+                                            {selectedFiles["RESIDENCIA"] && <p className="text-[10px] text-green-600 font-bold mt-2">✓ Selecionado</p>}
                                         </div>
                                     </div>
-                                    <button onClick={handleSubscriptionSubmit} className="w-full py-4 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase">Finalizar Inscrição</button>
+                                    <button disabled={isSubmittingSubscription} onClick={handleSubscriptionSubmit} className="w-full py-4 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase disabled:opacity-50">
+                                        {isSubmittingSubscription ? "Enviando documentos..." : "Finalizar Inscrição"}
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -296,26 +355,69 @@ export default function Dashboard() {
                                     </div>
 
                                     {/* Timeline/Stages */}
-                                    <div className="border-t border-slate-50 pt-6">
-                                        <p className="text-[10px] font-bold uppercase text-slate-400 mb-4 tracking-tighter">Etapas e Resultados</p>
-                                        <div className="space-y-3">
+                                    <div className="border-t border-slate-100 pt-8">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <p className="text-xs font-bold uppercase text-slate-400 tracking-tighter">Cronograma de Etapas</p>
+                                            <span className="text-[10px] font-bold text-slate-400 italic">Consulte os PDFs nos comunicados para notas detalhadas</span>
+                                        </div>
+                                        <div className="space-y-4">
                                             {sub.contest?.stages?.map((stage: any) => {
-                                                const res = sub.results?.find((r: any) => r.stageId === stage.id);
+                                                const stageDate = new Date(stage.date);
+                                                const now = new Date();
+                                                now.setHours(0, 0, 0, 0);
+                                                const compareDate = new Date(stageDate);
+                                                compareDate.setHours(0, 0, 0, 0);
+
+                                                let status = { label: "Pendente", color: "text-slate-400", bg: "bg-slate-50" };
+                                                if (compareDate > now) {
+                                                    status = { label: `Agendada: ${stageDate.toLocaleDateString()}`, color: "text-blue-500", bg: "bg-blue-50" };
+                                                } else if (compareDate.getTime() === now.getTime()) {
+                                                    status = { label: "Acontecendo Hoje", color: "text-amber-600", bg: "bg-amber-50" };
+                                                } else {
+                                                    status = { label: "Finalizada", color: "text-green-600", bg: "bg-green-50" };
+                                                }
+
                                                 return (
-                                                    <div key={stage.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                                                        <div>
-                                                            <p className="text-xs font-bold">{stage.name}</p>
-                                                            <p className="text-[10px] text-slate-400">{stage.description}</p>
-                                                        </div>
-                                                        {res ? (
-                                                            <div className="text-right">
-                                                                <p className="text-xs font-bold text-slate-900">Nota: {res.score}</p>
-                                                                <p className={`text-[9px] font-bold uppercase ${res.result === 'APPROVED' ? 'text-green-600' : 'text-rose-500'}`}>{res.result}</p>
+                                                    <div key={stage.id} className="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={`w-2 h-2 rounded-full ${status.bg.replace('bg-', 'bg-').split(' ')[0]} ${status.color.replace('text-', 'bg-')}`}></div>
+                                                            <div>
+                                                                <p className="text-sm font-bold text-slate-900">{stage.name}</p>
+                                                                <p className="text-xs text-slate-500">{stage.description || "Sem descrição disponível"}</p>
                                                             </div>
-                                                        ) : <span className="text-[10px] font-bold text-slate-300 uppercase">Pendente</span>}
+                                                        </div>
+                                                        <div className={`px-4 py-2 rounded-xl border ${status.bg} ${status.color} text-[10px] font-extrabold uppercase tracking-tight`}>
+                                                            {status.label}
+                                                        </div>
                                                     </div>
                                                 )
                                             })}
+                                        </div>
+                                    </div>
+
+                                    {/* Contest News History */}
+                                    <div className="border-t border-slate-100 mt-10 pt-10">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <p className="text-xs font-bold uppercase text-slate-400 tracking-tighter">Comunicados Oficiais</p>
+                                            <span className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-400 uppercase">Avisos do Edital</span>
+                                        </div>
+                                        <div className="space-y-6">
+                                            {sub.contest?.news?.map((news: any) => (
+                                                <div key={news.id} className="p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-slate-300 transition-all group">
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{news.title}</h4>
+                                                        <span className="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-lg">
+                                                            {new Date(news.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap">{news.content}</p>
+                                                </div>
+                                            ))}
+                                            {(!sub.contest?.news || sub.contest.news.length === 0) && (
+                                                <div className="p-10 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+                                                    <p className="text-xs font-bold text-slate-300 uppercase italic">Nenhum aviso publicado até agora</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

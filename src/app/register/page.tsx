@@ -12,7 +12,7 @@ export default function RegisterPage() {
         e.preventDefault()
         setIsLoading(true)
         setError("")
-        
+
         const formData = new FormData(e.currentTarget)
         const name = formData.get("name")
         const cpf = formData.get("cpf")
@@ -48,7 +48,7 @@ export default function RegisterPage() {
                 <div className="h-full w-full bg-indigo-600 rounded-[3rem] shadow-2xl relative overflow-hidden group">
                     <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]"></div>
                     <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/20 blur-3xl rounded-full"></div>
-                    
+
                     <div className="absolute inset-0 flex flex-col justify-center p-20 text-white">
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/10 backdrop-blur-md text-xs font-bold uppercase tracking-widest mb-12 w-fit">
                             Junte-se a nós
@@ -88,46 +88,46 @@ export default function RegisterPage() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-1">
                             <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Nome Completo</label>
-                            <input 
-                                name="name" 
-                                type="text" 
-                                placeholder="Seu nome aqui" 
-                                required 
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium text-slate-900" 
+                            <input
+                                name="name"
+                                type="text"
+                                placeholder="Seu nome aqui"
+                                required
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium text-slate-900"
                             />
                         </div>
 
                         <div className="space-y-1">
                             <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">CPF (apenas números)</label>
-                            <input 
-                                name="cpf" 
-                                type="text" 
-                                placeholder="000.000.000-00" 
-                                required 
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium text-slate-900" 
+                            <input
+                                name="cpf"
+                                type="text"
+                                placeholder="000.000.000-00"
+                                required
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium text-slate-900"
                             />
                         </div>
 
                         <div className="space-y-1">
                             <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">E-mail</label>
-                            <input 
-                                name="email" 
-                                type="email" 
-                                placeholder="seu@email.com" 
-                                required 
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium text-slate-900" 
+                            <input
+                                name="email"
+                                type="email"
+                                placeholder="seu@email.com"
+                                required
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium text-slate-900"
                             />
                         </div>
 
                         <div className="space-y-1">
                             <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Senha</label>
-                            <input 
-                                name="password" 
-                                type="password" 
-                                placeholder="••••••••" 
-                                required 
+                            <input
+                                name="password"
+                                type="password"
+                                placeholder="••••••••"
+                                required
                                 minLength={6}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium text-slate-900" 
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all placeholder:text-slate-300 text-sm font-medium text-slate-900"
                             />
                         </div>
 
@@ -138,8 +138,8 @@ export default function RegisterPage() {
                             </p>
                         </div>
 
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={isLoading}
                             className={`w-full py-4 bg-slate-900 text-white rounded-xl font-bold text-sm tracking-widest uppercase hover:bg-black transition-all flex items-center justify-center gap-3 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >

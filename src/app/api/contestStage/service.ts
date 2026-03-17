@@ -6,6 +6,7 @@ interface CreateContestStageInput {
     name: string,
     order: number,
     description: string,
+    date: Date,
 }
 type UpdateContestStageInput = Partial<Omit<CreateContestStageInput, "constestId">>
 
@@ -16,6 +17,7 @@ export const createContestStage = async (input: CreateContestStageInput) => {
             name: input.name,
             order: input.order,
             description: input.description,
+            date: input.date,
         }
     })
     return create
